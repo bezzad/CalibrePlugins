@@ -664,6 +664,7 @@ class SplitEpub:
 
     # pass in list of line numbers(?)
     def get_split_files(self, linenums):
+        globalindex = None
 
         self.filecache = FileCache(self.get_manifest_items())
 
@@ -671,6 +672,16 @@ class SplitEpub:
         lines = self.get_split_lines()
         for j in linenums:
             lines[int(j)]['include'] = True
+            soup = bs.BeautifulSoup(self.epub.read(lines[int(j)]['href']).decode('utf-8'))
+            for link in soup.findAll('a'):
+                if link['href'] is not None:
+                    for line in lines:
+                        if line['href'] == link['href'].split('#')[0]:
+                            line['include'] = True
+
+                            if globalindex is None:
+                                global globalindex
+                                globalindex = line['href']
 
         # loop through finding 'chunks' -- contiguous pieces in the
         # same file.  Each included file is at least one chunk, but if
@@ -842,36 +853,10 @@ class SplitEpub:
                                            'href': 'toc.ncx',
                                            'media-type': 'application/x-dtbncx+xml'}))
 
-        if coverjpgpath:
-            # <meta name="cover" content="cover.jpg"/>
-            metadata.appendChild(newTag(contentdom, "meta", {"name": "cover",
-                                                             "content": "coverimageid"}))
-            # cover stuff for later:
-            # at end of <package>:
-            # <guide>
-            # <reference type="cover" title="Cover" href="Text/cover.xhtml"/>
-            # </guide>
-            guide = newTag(contentdom, "guide")
-            guide.appendChild(newTag(contentdom, "reference", attrs={"type": "cover",
-                                                                     "title": "Cover",
-                                                                     "href": "cover.xhtml"}))
-            package.appendChild(guide)
-
-            manifest.appendChild(newTag(contentdom, "item",
-                                        attrs={'id': "coverimageid",
-                                               'href': "cover.jpg",
-                                               'media-type': "image/jpeg"}))
-
-            # Note that the id of the cover xhmtl *must* be 'cover'
-            # for it to work on Nook.
-            manifest.appendChild(newTag(contentdom, "item",
-                                        attrs={'id': "cover",
-                                               'href': "cover.xhtml",
-                                               'media-type': "application/xhtml+xml"}))
-
-            spine.appendChild(newTag(contentdom, "itemref",
-                                     attrs={"idref": "cover",
-                                            "linear": "yes"}))
+        manifest.appendChild(newTag(contentdom, "item",
+                                    attrs={'id': "not_purchased",
+                                           'href': "not_purchased_sections.xhtml",
+                                           'media-type': "application/xhtml+xml"}))
 
         contentcount = 0
         for (filename, id, type, filedata) in files:
@@ -879,8 +864,13 @@ class SplitEpub:
             # print("writing :%s"%filename)
             # add to manifest and spine
 
-            if coverjpgpath and filename == "cover.xhtml":
+            if filename == "not_purchased_sections.xhtml":
                 continue  # don't dup cover.
+
+            if globalindex == filename:
+                spine.appendChild(newTag(contentdom, "itemref",
+                                         attrs={"idref": "not_purchased",
+                                                "linear": "yes"}))
 
             outputepub.writestr(filename, filedata.encode('utf-8'))
             id = "a%d" % contentcount
@@ -893,11 +883,12 @@ class SplitEpub:
                                      attrs={"idref": id,
                                             "linear": "yes"}))
 
-        for (linked, type) in self.filecache.linkedfiles:
-            # add to manifest 
-            if coverjpgpath and linked == "cover.jpg":
-                continue  # don't dup cover.
+        if globalindex is None:
+            spine.appendChild(newTag(contentdom, "itemref",
+                                     attrs={"idref": "not_purchased",
+                                            "linear": "yes"}))
 
+        for (linked, type) in self.filecache.linkedfiles:
             try:
                 outputepub.writestr(linked, self.get_file(linked))
             except Exception, e:
@@ -943,46 +934,52 @@ class SplitEpub:
         # come back to lines again for TOC because files only has files(gasp-shock!)
         count = 1
         for line in self.split_lines:
-            if 'include' in line:
-                # if changed, use only changed values.
-                if line['num'] in changedtocs:
-                    line['toc'] = changedtocs[line['num']]
-                # can have more than one toc entry.
-                for title in line['toc']:
-                    newnav = newTag(tocncxdom, "navPoint",
-                                    {"id": "a%03d" % count, "playOrder": "%d" % count})
-                    count += 1
-                    tocnavMap.appendChild(newnav)
-                    navlabel = newTag(tocncxdom, "navLabel")
-                    newnav.appendChild(navlabel)
-                    # For purposes of TOC titling & desc, use first book author
-                    navlabel.appendChild(newTag(tocncxdom, "text", text=stripHTML(title)))
-                    # Find the first 'spine' item's content for the title navpoint.
-                    # Many epubs have the first chapter as first navpoint, so we can't just
-                    # copy that anymore.
-                    if line['anchor'] and line['href'] + "#" + line['anchor'] in self.filecache.anchors:
-                        src = self.filecache.anchors[line['href'] + "#" + line['anchor']]
-                        # print("toc from anchors(%s#%s)(%s)"%(line['href'],line['anchor'],src))
-                    else:
-                        # print("toc from href(%s)"%line['href'])
-                        src = line['href']
-                    newnav.appendChild(newTag(tocncxdom, "content",
-                                              {"src": src}))
+            # if changed, use only changed values.
+            if line['num'] in changedtocs:
+                line['toc'] = changedtocs[line['num']]
+            # can have more than one toc entry.
+            for title in line['toc']:
+                newnav = newTag(tocncxdom, "navPoint",
+                                {"id": "a%03d" % count, "playOrder": "%d" % count})
+                count += 1
+                tocnavMap.appendChild(newnav)
+                navlabel = newTag(tocncxdom, "navLabel")
+                newnav.appendChild(navlabel)
+                # For purposes of TOC titling & desc, use first book author
+                navlabel.appendChild(newTag(tocncxdom, "text", text=stripHTML(title)))
+                # Find the first 'spine' item's content for the title navpoint.
+                # Many epubs have the first chapter as first navpoint, so we can't just
+                # copy that anymore.
+                if line['anchor'] and line['href'] + "#" + line['anchor'] in self.filecache.anchors:
+                    src = self.filecache.anchors[line['href'] + "#" + line['anchor']]
+                    # print("toc from anchors(%s#%s)(%s)"%(line['href'],line['anchor'],src))
+                else:
+                    # print("toc from href(%s)"%line['href'])
+                    src = line['href']
+
+                if 'include' not in line:
+                    src = 'not_purchased_sections.xhtml'
+
+                newnav.appendChild(newTag(tocncxdom, "content",
+                                          {"src": src}))
 
         outputepub.writestr("toc.ncx", tocncxdom.toprettyxml(indent='   ', encoding='utf-8'))
 
-        if coverjpgpath:
-            # write, not write string.  Pulling from file.
-            outputepub.write(coverjpgpath, "cover.jpg")
-
-            outputepub.writestr("cover.xhtml", '''
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en"><head><title>Cover</title><style type="text/css" title="override_css">
-@page {padding: 0pt; margin:0pt}
-body { text-align: center; padding:0pt; margin: 0pt; }
-div { margin: 0pt; padding: 0pt; }
-</style></head><body><div>
-<img src="cover.jpg" alt="cover"/>
-</div></body></html>
+        outputepub.writestr("not_purchased_sections.xhtml", '''
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<title>Cover</title>
+<link href="stylesheet.css" rel="stylesheet" type="text/css"/>
+<link href="page_styles.css" rel="stylesheet" type="text/css"/>
+</head>
+<body class="calibre">
+<div>
+<p>
+برای مطالعه همه قسمت‌ها لطفا نسخه کامل کتاب را خریدای کنید.
+</p>
+</div>
+</body>
+</html>
 ''')
 
         # declares all the files created by Windows.  otherwise, when

@@ -63,7 +63,7 @@ class EpubSplitPlugin(InterfaceAction):
     # keyboard shortcuts, so try to use an unusual/unused shortcut.
     # (text, icon_path, tooltip, keyboard shortcut)
     # icon_path isn't in the zip--icon loaded below.
-    action_spec = (_('EpubSplit'), None,
+    action_spec = (_('ساختن نمونه کتاب'), None,
                    _('Split off part of an EPUB into a new book.'), ())
     # None for keyboard shortcut doesn't allow shortcut.  () does, there just isn't one yet
 
@@ -143,7 +143,7 @@ class EpubSplitPlugin(InterfaceAction):
             # logger.debug()
 
             d = SelectLinesDialog(self.gui,
-                                  _('Select Sections to Split Off'),
+                                  _('قسمت های موجود در نمونه را انتخاب کنید'),
                                   prefs,
                                   self.qaction.icon(),
                                   lines,
@@ -227,7 +227,7 @@ class EpubSplitPlugin(InterfaceAction):
         defauthors = None
 
         if not deftitle and prefs['copytitle']:
-            deftitle = _("%s Split") % misource.title
+            deftitle = _("نمونه %s") % misource.title
 
         if prefs['copyauthors']:
             defauthors = misource.authors
@@ -308,33 +308,27 @@ class EpubSplitPlugin(InterfaceAction):
         # logger.debug("5:%s"%(time.time()-self.t))
         self.t = time.time()
 
-        if editmeta:
-            confirm('\n' + _('''The book for the new Split EPUB has been created and default metadata filled in.
-
-However, the EPUB will *not* be created until after you've reviewed, edited, and closed the metadata dialog that follows.
-
-You can fill in the metadata yourself, or use download metadata for known books.
-
-If you download or add a cover image, it will be included in the generated EPUB.''') + '\n',
-                    'epubsplit_created_now_edit_again',
-                    self.gui)
-
-            self.gui.iactions['Edit Metadata'].edit_metadata(False)
+        # if editmeta:
+        #     confirm('\n'+_('کتاب نمونه ساخته شود؟')+'\n',
+        #             'epubsplit_created_now_edit_again',
+        #             self.gui)
+        #
+        #     self.gui.iactions['Edit Metadata'].edit_metadata(False)
 
         # logger.debug("5:%s"%(time.time()-self.t))
         self.t = time.time()
         self.gui.tags_view.recount()
 
-        self.gui.status_bar.show_message(_('Splitting off from EPUB...'), 60000)
+        self.gui.status_bar.show_message(_('فایل نمونه ساخته شد'), 60000)
 
         mi = db.get_metadata(book_id, index_is_id=True)
 
         outputepub = PersistentTemporaryFile(suffix='.epub')
 
         coverjpgpath = None
-        if mi.has_cover:
-            # grab the path to the real image.
-            coverjpgpath = os.path.join(db.library_path, db.path(book_id, index_is_id=True), 'cover.jpg')
+        # if mi.has_cover:
+        #     # grab the path to the real image.
+        #     coverjpgpath = os.path.join(db.library_path, db.path(book_id, index_is_id=True), 'cover.jpg')
 
         splitepub.write_split_epub(outputepub,
                                    linenums,

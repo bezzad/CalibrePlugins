@@ -42,10 +42,10 @@ class EpubSplitBase(InterfaceActionBase):
     calibre utilities to run without needing to load the GUI libraries.
     '''
     name = 'EpubSplit'
-    description = _('UI plugin to split off parts of an epub into a new book.')
+    description = _('create epub sample for  taaghche')
     supported_platforms = ['windows', 'osx', 'linux']
-    author = 'Jim Miller'
-    version = (2, 1, 1)
+    author = 'Iman Dolatkia'
+    version = (1, 0, 0)
     minimum_calibre_version = (0, 9, 29)
 
     #: This field defines the GUI plugin class that contains all the code

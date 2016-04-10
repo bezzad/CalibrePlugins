@@ -91,17 +91,16 @@ class SelectLinesDialog(SizePersistedDialog):
         options_layout = QHBoxLayout()
 
         button_box = QDialogButtonBox(self)
-        new_book = button_box.addButton(_("New Book"), button_box.ActionRole)
+        new_book = button_box.addButton(_("ساختن کتاب نمونه"), button_box.ActionRole)
         new_book.setToolTip(
             _("Make <i>one</i> new book containing the sections selected above and then edit its Metadata."))
         new_book.clicked.connect(self.new_book)
 
-        new_books = button_box.addButton(_("New Book per Section"), button_box.ActionRole)
-        new_books.setToolTip(_(
-            "Make a new book for <i>each</i> of the sections selected above.  Title for each will be the Table of Contents, which you can edit here first."))
-        new_books.clicked.connect(self.new_books)
+        # new_books = button_box.addButton(_("New Book per Section"), button_box.ActionRole)
+        # new_books.setToolTip(_("Make a new book for <i>each</i> of the sections selected above.  Title for each will be the Table of Contents, which you can edit here first."))
+        # new_books.clicked.connect(self.new_books)
 
-        button_box.addButton(_("Done"), button_box.RejectRole)
+        button_box.addButton(_("بستن"), button_box.RejectRole)
         button_box.rejected.connect(self.reject)
         options_layout.addWidget(button_box)
 
@@ -137,7 +136,7 @@ class LinesTableWidget(QTableWidget):
         self.clear()
         self.setAlternatingRowColors(True)
         self.setRowCount(len(lines))
-        header_labels = [_('HREF'), _('Guide'), _('Table of Contents')]  # , 'extra'
+        header_labels = [_('نام فایل'), _('فهرست')]  # , 'extra'
         self.setColumnCount(len(header_labels))
         self.setHorizontalHeaderLabels(header_labels)
         self.horizontalHeader().setStretchLastSection(True)
@@ -152,10 +151,9 @@ class LinesTableWidget(QTableWidget):
         self.doubleClicked.connect(self.show_tooltip)
 
         self.resizeColumnsToContents()
-        self.setMinimumColumnWidth(1, 100)
-        self.setMinimumColumnWidth(2, 10)
-        self.setMinimumColumnWidth(3, 100)
-        self.setMinimumSize(300, 0)
+        self.setMinimumColumnWidth(1, 200)
+        self.setMinimumColumnWidth(2, 200)
+        self.setMinimumSize(400, 0)
 
     def setMinimumColumnWidth(self, col, minimum):
         if self.columnWidth(col) < minimum:
@@ -178,7 +176,7 @@ class LinesTableWidget(QTableWidget):
             guide = ""
         guide_cell = ReadOnlyTableWidgetItem(guide)
         guide_cell.setToolTip(_("Indicates 'special' pages: copyright, titlepage, etc."))
-        self.setItem(row, 1, guide_cell)
+        # self.setItem(row, 1, guide_cell)
 
         toc_str = "|".join(line['toc'])
         toc_cell = QTableWidgetItem(toc_str)
@@ -186,7 +184,7 @@ class LinesTableWidget(QTableWidget):
         toc_cell.setToolTip(_('''Click and copy hotkey to copy text.
 Double-click to edit ToC entry.
 Pipes(|) divide different ToC entries to the same place.'''))
-        self.setItem(row, 2, toc_cell)
+        self.setItem(row, 1, toc_cell)
 
     def selected_all_have_toc(self):
         "Return false if any of the sections would not have a title when doing split all."
@@ -212,8 +210,8 @@ Pipes(|) divide different ToC entries to the same place.'''))
             linenum = convert_qvariant(row.data(Qt.UserRole))
             linenums.append(linenum)
             # changed tocs only.
-            if convert_qvariant(self.item(row.row(), 2).data(Qt.UserRole)) != self.item(row.row(), 2).text():
-                changedtocs[linenum] = unicode(self.item(row.row(), 2).text()).strip().split('|')
+            if convert_qvariant(self.item(row.row(), 1).data(Qt.UserRole)) != self.item(row.row(), 1).text():
+                changedtocs[linenum] = unicode(self.item(row.row(), 1).text()).strip().split('|')
 
         linenums.sort()
         return linenums, changedtocs
