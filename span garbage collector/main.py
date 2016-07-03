@@ -11,7 +11,7 @@ try:
 except:
     from PyQt4.Qt import QAction, QMenu, QDialog
 
-
+from PyQt5.Qt import QAction, QMenu, QApplication, QMessageBox
 from calibre.gui2.tweak_book.plugin import Tool
 from calibre.gui2.tweak_book import editor_name
 from calibre.gui2 import error_dialog, info_dialog
@@ -42,7 +42,7 @@ class SpanDivEdit(Tool):
 
         # Create an action, this will be added to the plugins toolbar and
         # the plugins menu
-        ac = QAction(get_icons('images/spandivedit_icon.png'), _('Edit Spans && Divs'), self.gui)
+        ac = QAction(get_icons('images/spandivedit_icon.png'), _('حذف تگ های اضافه'), self.gui)
         self.restore_prefs()
         if not for_toolbar:
             # Register a keyboard shortcut for this toolbar action. We only
@@ -67,8 +67,8 @@ class SpanDivEdit(Tool):
     def dispatcher(self):
         container = self.current_container  # The book being edited as a container object
         if not container:
-            return info_dialog(self.gui, _('No book open'),
-                        _('Need to have a book open first.'), show=True)
+            return info_dialog(self.gui, _('هیچ کتابی باز نیست'),
+                        _('لطفا اول یک کتاب را باز کنید'), show=True)
         if self.parse_current:
             name = editor_name(self.gui.central.current_editor)
             if not name or container.mime_map[name] not in OEB_DOCS:
@@ -78,39 +78,56 @@ class SpanDivEdit(Tool):
         self.cleanasawhistle = True
         self.changed_files = []
 
-        from calibre_plugins.diaps_toolbag.dialogs import RemoveDialog
-        dlg = RemoveDialog(self.gui)
-        if dlg.exec_():
-            criteria = dlg.getCriteria()
+        # criteria1 = ('rtl', 'normal', 'span', 'dir', 'delete', None, '', False)
+        # criteria2 = ('ltr', 'normal', 'span', 'dir', 'delete', None, '', False)
+        # criteria3 = ('', 'normal', 'span', None, 'delete', None, '', False)
 
-            # Ensure any in progress editing the user is doing is present in the container
-            self.boss.commit_all_editors_to_container()
-            self.boss.add_savepoint(_('Before: Span Div Edit'))
+        self.boss.commit_all_editors_to_container()
+        self.boss.add_savepoint(_('Before: Span Div Edit'))
 
-            # for name, media_type in container.mime_map :
-            try:
-                self.process_files(criteria)
-            except Exception:
-                # Something bad happened report the error to the user
-                import traceback
-                error_dialog(self.gui, _('Failed'),
-                    _('Failed to process divs or spans, click "Show details" for more info'),
-                    det_msg=traceback.format_exc(), show=True)
-                # Revert to the saved restore point
-                self.boss.revert_requested(self.boss.global_undo.previous_container)
+        attrs = []
+        for name, media_type in container.mime_map.iteritems() :
+            if media_type in OEB_DOCS :
+                for node in container.parsed(name).getroottree().iter() :
+                    for x in node.keys():
+                        if x != 'class' and x != 'style' :
+                            attrs.append(x)
+        
+        attrs = sorted(set(attrs))
+        # QMessageBox.information(self.gui, "salam", "Here!")
+        criterias = []
+        for x in attrs:
+            criterias.append(('.*', 'regex', 'span', str(x), 'delete', None, '', False))
+        criterias.append((None, 'normal', 'span', None, 'delete', None, '', False))
+        
+        try:
+            # self.process_files(criteria1)
+            # self.process_files(criteria2)
+            # self.process_files(criteria3)
+            for cri in criterias :
+                self.process_files(cri)
+            QMessageBox.information(self.gui, "Success", "ویرایش تگ ها با موفقیت انجام شد")
+        except Exception:
+            # Something bad happened report the error to the user
+            import traceback
+            error_dialog(self.gui, _('خطا'),
+                _('ویرایش تگ ها انچام نشد.'),
+                det_msg=traceback.format_exc(), show=True)
+            # Revert to the saved restore point
+            self.boss.revert_requested(self.boss.global_undo.previous_container)
+        else:
+            if not self.cleanasawhistle:
+                # Show the user what changes we have made,
+                # allowing then to revert them if necessary
+                accepted = ResultsDialog(self.gui, self.changed_files).exec_()
+                if accepted == QDialog.Accepted:
+                    self.boss.show_current_diff()
+                # Update the editor UI to take into account all the changes we
+                # have made
+                self.boss.apply_container_update_to_gui()
             else:
-                if not self.cleanasawhistle:
-                    # Show the user what changes we have made,
-                    # allowing then to revert them if necessary
-                    accepted = ResultsDialog(self.gui, self.changed_files).exec_()
-                    if accepted == QDialog.Accepted:
-                        self.boss.show_current_diff()
-                    # Update the editor UI to take into account all the changes we
-                    # have made
-                    self.boss.apply_container_update_to_gui()
-                else:
-                    info_dialog(self.gui, _('Nothing changed'),
-                    '<p>{0}'.format(_('Nothing matching your criteria was found.')), show=True)
+                info_dialog(self.gui, _('هیچی تغییر نکرد'),
+                '<p>{0}'.format(_('هیچ تگی با این شرایط پیدا نشد.')), show=True)
 
     def process_files(self, criteria):
         container = self.current_container  # The book being edited as a container object
@@ -119,7 +136,6 @@ class SpanDivEdit(Tool):
             if media_type in OEB_DOCS :
                 if self.parse_current:
                     # name = editor_name(self.gui.central.current_editor)
-                    # QMessageBox.information(self.gui, "salam", str(type(container.parsed(x).getroot())))
                     data = etree.tostring(container.parsed(name).getroottree(), encoding = 'unicode')
                     # data = etree.ElementTree.parse(name)
                     htmlstr = self.delete_modify(data, criteria)
