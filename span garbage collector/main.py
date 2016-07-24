@@ -99,7 +99,11 @@ class SpanDivEdit(Tool):
         for x in attrs:
             criterias.append(('.*', 'regex', 'span', str(x), 'delete', None, '', False))
         criterias.append((None, 'normal', 'span', None, 'delete', None, '', False))
-        
+        criterias.append(('.*', 'regex', 'table', 'class', 'delete', None, '', False))
+        criterias.append((None, 'normal', 'tr', None, 'delete', None, '', False))
+        criterias.append((None, 'normal', 'tbody', None, 'delete', None, '', False))
+        criterias.append(('.*', 'regex', 'td', 'class', 'delete', None, '', False))
+        QMessageBox.information(self.gui, "salam", "chos!")
         try:
             # self.process_files(criteria1)
             # self.process_files(criteria2)
