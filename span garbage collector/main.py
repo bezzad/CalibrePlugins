@@ -90,7 +90,7 @@ class SpanDivEdit(Tool):
             if media_type in OEB_DOCS :
                 for node in container.parsed(name).getroottree().iter() :
                     for x in node.keys():
-                        if x != 'class' and x != 'style' :
+                        if x != 'class' and x != 'style' and x!= 'id':
                             attrs.append(x)
         
         attrs = sorted(set(attrs))
@@ -103,7 +103,6 @@ class SpanDivEdit(Tool):
         criterias.append((None, 'normal', 'tr', None, 'delete', None, '', False))
         criterias.append((None, 'normal', 'tbody', None, 'delete', None, '', False))
         criterias.append(('.*', 'regex', 'td', 'class', 'delete', None, '', False))
-        QMessageBox.information(self.gui, "salam", "chos!")
         try:
             # self.process_files(criteria1)
             # self.process_files(criteria2)
