@@ -9,7 +9,7 @@ from calibre.customize import EditBookToolPlugin
 
 class DemoPlugin(EditBookToolPlugin):
 
-    name = 'Delete Kesh_dahandeh'
+    name = 'indd to epub initial settings'
     version = (1, 0, 0)
     author = 'Rooholah Abolhasani'
     supported_platforms = ['windows', 'osx', 'linux']
