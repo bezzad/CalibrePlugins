@@ -966,19 +966,27 @@ class SplitEpub:
         outputepub.writestr("toc.ncx", tocncxdom.toprettyxml(indent='   ', encoding='utf-8'))
 
         outputepub.writestr("not_purchased_sections.xhtml", '''
+<?xml version='1.0' encoding='utf-8'?>
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+
 <head>
-<title>Cover</title>
-<link href="stylesheet.css" rel="stylesheet" type="text/css"/>
-<link href="page_styles.css" rel="stylesheet" type="text/css"/>
+  <title>Cover</title>
+  <link href="stylesheet.css" rel="stylesheet" type="text/css"/>
+  <link href="page_styles.css" rel="stylesheet" type="text/css"/>
 </head>
+
 <body class="calibre">
-<div>
-<p>
-برای مطالعه همه قسمت‌ها لطفا نسخه کامل کتاب را خریداری کنید.
-</p>
-</div>
+
+  <div>
+
+    <p>
+برای مطالعه همه قسمت‌ها لطفا نسخه کامل کتاب را خریدای کنید.
+    </p>
+
+  </div>
+
 </body>
+
 </html>
 ''')
 
