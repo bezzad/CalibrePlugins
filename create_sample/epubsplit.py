@@ -672,6 +672,8 @@ class SplitEpub:
         lines = self.get_split_lines()
         for j in linenums:
             lines[int(j)]['include'] = True
+
+            # keep end of book index pages
             soup = bs.BeautifulSoup(self.epub.read(lines[int(j)]['href']).decode('utf-8'))
             for link in soup.findAll('a'):
                 if link['href'] is not None:
@@ -845,7 +847,9 @@ class SplitEpub:
 
         manifest = contentdom.createElement("manifest")
         package.appendChild(manifest)
-        spine = newTag(contentdom, "spine", attrs={"toc": "ncx"})
+        spine = newTag(contentdom, "spine", attrs={"page-progression-direction": "rtl",
+                                                   "toc": "ncx"
+                                                   })
         package.appendChild(spine)
 
         manifest.appendChild(newTag(contentdom, "item",

@@ -45,7 +45,7 @@ class EpubSplitBase(InterfaceActionBase):
     description = _('create epub sample for  taaghche')
     supported_platforms = ['windows', 'osx', 'linux']
     author = 'Iman Dolatkia'
-    version = (1, 0, 0)
+    version = (1, 0, 1)
     minimum_calibre_version = (0, 9, 29)
 
     #: This field defines the GUI plugin class that contains all the code

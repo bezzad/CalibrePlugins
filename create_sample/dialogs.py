@@ -112,6 +112,7 @@ class SelectLinesDialog(SizePersistedDialog):
 
     def new_book(self):
         self.do_split_fn(self.get_selected_linenums_tocs())
+        self.reject()
 
     def new_books(self):
         if not self.lines_table.selected_all_have_toc():
