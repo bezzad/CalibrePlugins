@@ -41,11 +41,11 @@ class EpubSplitBase(InterfaceActionBase):
     The reason for having two classes is that it allows the command line
     calibre utilities to run without needing to load the GUI libraries.
     '''
-    name = 'EpubSplit'
+    name = 'Taaghche Create Sample Plugin'
     description = _('create epub sample for  taaghche')
     supported_platforms = ['windows', 'osx', 'linux']
     author = 'Iman Dolatkia'
-    version = (1, 0, 1)
+    version = (1, 0, 2)
     minimum_calibre_version = (0, 9, 29)
 
     #: This field defines the GUI plugin class that contains all the code
