@@ -20,8 +20,6 @@ from calibre.ebooks.oeb.polish.container import OEB_DOCS, OEB_STYLES
 from calibre.utils.config import JSONConfig
 from calibre_plugins.diaps_toolbag.resources.html_parser import MarkupParser
 from calibre_plugins.diaps_toolbag.resources.smartypants import smartyPants
-from calibre_plugins.diaps_toolbag.utilities import unescape
-from calibre_plugins.diaps_toolbag.dialogs import ResultsDialog
 
 from calibre_plugins.diaps_toolbag.__init__ import PLUGIN_SAFE_NAME
 
@@ -67,13 +65,12 @@ class SpanDivEdit(Tool):
     def dispatcher(self):
         container = self.current_container  # The book being edited as a container object
         if not container:
-            return info_dialog(self.gui, _('هیچ کتابی باز نیست'),
-                        _('لطفا اول یک کتاب را باز کنید'), show=True)
+            return QMessageBox.information(self.gui, "Success", "لطفا اول یک کتاب را باز کنید")
+
         if self.parse_current:
             name = editor_name(self.gui.central.current_editor)
             if not name or container.mime_map[name] not in OEB_DOCS:
-                return info_dialog(self.gui, _('Cannot Process'),
-                        _('No file open for editing or the current file is not an (x)html file.'), show=True)
+                return QMessageBox.information(self.gui, "Success", "لطفا اول یک فایل html را باز کنید")
 
         self.cleanasawhistle = True
         self.changed_files = []
@@ -90,7 +87,7 @@ class SpanDivEdit(Tool):
             if media_type in OEB_DOCS :
                 for node in container.parsed(name).getroottree().iter() :
                     for x in node.keys():
-                        if x != 'class' and x != 'style' and x!= 'id':
+                        if x != 'class' and x != 'style' and x != 'id':
                             attrs.append(x)
         
         attrs = sorted(set(attrs))
@@ -109,7 +106,7 @@ class SpanDivEdit(Tool):
             # self.process_files(criteria3)
             for cri in criterias :
                 self.process_files(cri)
-            QMessageBox.information(self.gui, "Success", "ویرایش تگ ها با موفقیت انجام شد")
+
         except Exception:
             # Something bad happened report the error to the user
             import traceback
@@ -122,15 +119,13 @@ class SpanDivEdit(Tool):
             if not self.cleanasawhistle:
                 # Show the user what changes we have made,
                 # allowing then to revert them if necessary
-                accepted = ResultsDialog(self.gui, self.changed_files).exec_()
-                if accepted == QDialog.Accepted:
-                    self.boss.show_current_diff()
+                self.boss.show_current_diff()
+
                 # Update the editor UI to take into account all the changes we
                 # have made
                 self.boss.apply_container_update_to_gui()
             else:
-                info_dialog(self.gui, _('هیچی تغییر نکرد'),
-                '<p>{0}'.format(_('هیچ تگی با این شرایط پیدا نشد.')), show=True)
+                 QMessageBox.information(self.gui, "Success", "موردی پیدا نشد")
 
     def process_files(self, criteria):
         container = self.current_container  # The book being edited as a container object
@@ -145,6 +140,8 @@ class SpanDivEdit(Tool):
                     if htmlstr != data:
                         self.cleanasawhistle = False
                         container.open(name, 'wb').write(htmlstr.encode('utf-8'))
+                        container.parsed(name)
+                        container.dirty(name)
                 else:
                     from calibre_plugins.diaps_toolbag.dialogs import ShowProgressDialog
                     d = ShowProgressDialog(self.gui, container, OEB_DOCS, criteria, self.delete_modify, _('Parsing'))
