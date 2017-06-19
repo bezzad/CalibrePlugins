@@ -11,7 +11,7 @@ from calibre.utils.config import JSONConfig
 
 
 ######################################################################################################
-################################## change english num to persian in sup  #############################
+################################## Change english num to persian in sup  #############################
 ######################################################################################################
 class ChangeSupEnglishNum(Tool):
     #: Set this to a unique name it will be used as a key
@@ -66,7 +66,7 @@ class ChangeSupEnglishNum(Tool):
 
 
 ######################################################################################################
-###################################### add persian and page direction  ###############################
+###################################### Add persian and page direction  ###############################
 ######################################################################################################
 class AddPersianAndDirection(Tool):
     #: Set this to a unique name it will be used as a key
@@ -219,6 +219,71 @@ class CopyNimFasele(Tool):
         cb = QApplication.clipboard()
         cb.clear()
         cb.setText('‌')
+
+
+######################################################################################################
+#######################################  Fix Images to Center of <p>  ################################
+######################################################################################################
+class ImagesCentralizer(Tool):
+    #: Set this to a unique name it will be used as a key
+    name = 'ImagesCentralizer'
+
+    #: If True the user can choose to place this tool in the plugins toolbar
+    allowed_in_toolbar = True
+
+    #: If True the user can choose to place this tool in the plugins menu
+    allowed_in_menu = True
+
+    def create_action(self, for_toolbar=True):
+        # Create an action, this will be added to the plugins toolbar and
+        # the plugins menu
+        ac = QAction(get_icons('images/center_images.png'), 'وسط چین کردن عکس ها', self.gui)
+        if not for_toolbar:
+            # Register a keyboard shortcut for this toolbar action. We only
+            # register it for the action created for the menu, not the toolbar,
+            # to avoid a double trigger
+            self.register_shortcut(ac, 'images-centralizer', default_keys=('Ctrl+Shift+W',))
+        ac.triggered.connect(self.images_centraler)
+        return ac
+
+    def images_centraler(self):
+        try:
+            self.boss.commit_all_editors_to_container()
+            self.boss.add_savepoint('Before: ImagesCentral')
+            container = self.current_container  # The book being edited as a container object
+
+            for name, media_type in container.mime_map.iteritems():
+                if media_type in OEB_DOCS:
+                    # The prefix // means search at any level of the document.
+                    for img in XPath('//h:img')(container.parsed(name)):
+                        img.attrib['style'] = '' if 'style' not in img.keys() else img.attrib['style']
+                        img.attrib['style'] += 'text-align: center;'
+                        container.dirty(name)
+
+                        """ node members:
+                                node.['_init', 'addnext', 'addprevious', 'append', 'attrib', 'base',
+                                      'clear', 'extend', 'find', 'findall', 'findtext', 'get', 'getchildren',
+                                      'getiterator', 'getnext', 'getparent', 'getprevious', 'getroottree',
+                                      'index', 'insert', 'items', 'iter', 'iterancestors', 'iterchildren',
+                                      'iterdescendants', 'iterfind', 'itersiblings', 'itertext', 'keys',
+                                      'makeelement', 'nsmap', 'prefix', 'remove', 'replace', 'set',
+                                      'sourceline', 'tag', 'tail', 'text', 'values', 'xpath']
+                        """
+        except Exception as e:
+            QMessageBox.information(self.gui, "main Err", "error({0}): {1}".format(type(e), e.args))
+        else:
+            # Show the user what changes we have made, allowing her to
+            # revert them if necessary
+            self.boss.show_current_diff()
+            #
+            # Update the editor UI to take into account all the changes we have made
+            self.boss.apply_container_update_to_gui()
+
+    def get_paragraph_parent(selfself, tag):
+        if tag is None:
+            return None
+
+
 
 ######################################################################################################
 ###################################### see Last Changes ##############################################
