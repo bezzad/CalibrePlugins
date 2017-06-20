@@ -11,7 +11,7 @@ from calibre.utils.config import JSONConfig
 
 
 ######################################################################################################
-################################## change english num to persian in sup  #############################
+################################## Change english num to persian in sup  #############################
 ######################################################################################################
 class ChangeSupEnglishNum(Tool):
     #: Set this to a unique name it will be used as a key
@@ -66,7 +66,7 @@ class ChangeSupEnglishNum(Tool):
 
 
 ######################################################################################################
-###################################### add persian and page direction  ###############################
+###################################### Add persian and page direction  ###############################
 ######################################################################################################
 class AddPersianAndDirection(Tool):
     #: Set this to a unique name it will be used as a key
@@ -219,6 +219,78 @@ class CopyNimFasele(Tool):
         cb = QApplication.clipboard()
         cb.clear()
         cb.setText('‌')
+
+
+######################################################################################################
+#######################################  Fix Images to Center of <p>  ################################
+######################################################################################################
+class ImagesCentralizer(Tool):
+    #: Set this to a unique name it will be used as a key
+    name = 'ImagesCentralizer'
+
+    #: If True the user can choose to place this tool in the plugins toolbar
+    allowed_in_toolbar = True
+
+    #: If True the user can choose to place this tool in the plugins menu
+    allowed_in_menu = True
+
+    def create_action(self, for_toolbar=True):
+        # Create an action, this will be added to the plugins toolbar and
+        # the plugins menu
+        ac = QAction(get_icons('images/center_images.png'), 'وسط چین کردن عکس ها', self.gui)
+        if not for_toolbar:
+            # Register a keyboard shortcut for this toolbar action. We only
+            # register it for the action created for the menu, not the toolbar,
+            # to avoid a double trigger
+            self.register_shortcut(ac, 'images-centralizer', default_keys=('Ctrl+Shift+W',))
+        ac.triggered.connect(self.images_centraler)
+        return ac
+
+    def get_specific_parent(self, element, tags):
+        if element is None:
+            return None
+
+        parent = element.getparent()
+        if parent is not None:
+            for tag in tags:
+                if parent.tag.lower().endswith('}' + tag):
+                    return parent
+
+        return self.get_specific_parent(parent, tags)
+
+    def images_centraler(self):
+        try:
+            self.boss.commit_all_editors_to_container()
+            self.boss.add_savepoint('Before: ImagesCentral')
+            container = self.current_container  # The book being edited as a container object
+
+            for name, media_type in container.mime_map.iteritems():
+                if media_type in OEB_DOCS:
+                    # The prefix // means search at any level of the document.
+                    for img in XPath('//h:img')(container.parsed(name)):
+                        p = self.get_specific_parent(img, ['p', 'div', 'ul', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'])
+                        if p is not None:
+                            p.attrib['style'] = \
+                                '' if 'style' not in map(lambda x: x.lower(), p.keys()) else p.attrib['style']
+                            if re.search('text-align:[\ \w]*[;]?', p.attrib['style'], re.IGNORECASE):
+                                # if exist this style, so replace it by center type
+                                p.attrib['style'] = re.sub('text-align:[\ \w]*[;]?',
+                                                           'text-align:center;',
+                                                           p.attrib['style'], flags=re.I)
+                            else:
+                                p.attrib['style'] += 'text-align:center;'
+                            container.dirty(name)
+        except Exception as e:
+            QMessageBox.information(self.gui, "main Err", "error({0}): {1}".format(type(e), e.args))
+        else:
+            # Show the user what changes we have made, allowing her to
+            # revert them if necessary
+            self.boss.show_current_diff()
+            #
+            # Update the editor UI to take into account all the changes we have made
+            self.boss.apply_container_update_to_gui()
+
+
 
 ######################################################################################################
 ###################################### see Last Changes ##############################################
