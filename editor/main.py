@@ -246,6 +246,18 @@ class ImagesCentralizer(Tool):
         ac.triggered.connect(self.images_centraler)
         return ac
 
+    def get_specific_parent(self, element, tags):
+        if element is None:
+            return None
+
+        parent = element.getparent()
+        if parent is not None:
+            for tag in tags:
+                if parent.tag.lower().endswith('}' + tag):
+                    return parent
+
+        return self.get_specific_parent(parent, tags)
+
     def images_centraler(self):
         try:
             self.boss.commit_all_editors_to_container()
@@ -256,19 +268,18 @@ class ImagesCentralizer(Tool):
                 if media_type in OEB_DOCS:
                     # The prefix // means search at any level of the document.
                     for img in XPath('//h:img')(container.parsed(name)):
-                        img.attrib['style'] = '' if 'style' not in img.keys() else img.attrib['style']
-                        img.attrib['style'] += 'text-align: center;'
-                        container.dirty(name)
-
-                        """ node members:
-                                node.['_init', 'addnext', 'addprevious', 'append', 'attrib', 'base',
-                                      'clear', 'extend', 'find', 'findall', 'findtext', 'get', 'getchildren',
-                                      'getiterator', 'getnext', 'getparent', 'getprevious', 'getroottree',
-                                      'index', 'insert', 'items', 'iter', 'iterancestors', 'iterchildren',
-                                      'iterdescendants', 'iterfind', 'itersiblings', 'itertext', 'keys',
-                                      'makeelement', 'nsmap', 'prefix', 'remove', 'replace', 'set',
-                                      'sourceline', 'tag', 'tail', 'text', 'values', 'xpath']
-                        """
+                        p = self.get_specific_parent(img, ['p', 'div', 'ul', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'])
+                        if p is not None:
+                            p.attrib['style'] = \
+                                '' if 'style' not in map(lambda x: x.lower(), p.keys()) else p.attrib['style']
+                            if re.search('text-align:[\ \w]*[;]?', p.attrib['style'], re.IGNORECASE):
+                                # if exist this style, so replace it by center type
+                                p.attrib['style'] = re.sub('text-align:[\ \w]*[;]?',
+                                                           'text-align:center;',
+                                                           p.attrib['style'], flags=re.I)
+                            else:
+                                p.attrib['style'] += 'text-align:center;'
+                            container.dirty(name)
         except Exception as e:
             QMessageBox.information(self.gui, "main Err", "error({0}): {1}".format(type(e), e.args))
         else:
@@ -278,10 +289,6 @@ class ImagesCentralizer(Tool):
             #
             # Update the editor UI to take into account all the changes we have made
             self.boss.apply_container_update_to_gui()
-
-    def get_paragraph_parent(selfself, tag):
-        if tag is None:
-            return None
 
 
 
