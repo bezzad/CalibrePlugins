@@ -12,9 +12,9 @@ from calibre.customize import EditBookToolPlugin
 PLUGIN_NAME = "Remove garbage tags no ui"
 PLUGIN_SAFE_NAME = PLUGIN_NAME.strip().lower().replace(' ', '_')
 PLUGIN_DESCRIPTION = 'A tool for ebook editing.'
-PLUGIN_VERSION_TUPLE = (1, 1, 2)
+PLUGIN_VERSION_TUPLE = (1, 1, 3)
 PLUGIN_VERSION = '.'.join([str(x) for x in PLUGIN_VERSION_TUPLE])
-PLUGIN_AUTHORS = 'Rooholah Abolhasani'
+PLUGIN_AUTHORS = 'Hasin.Taaghche'
 
 class EditingToolbagPlugin(EditBookToolPlugin):
 

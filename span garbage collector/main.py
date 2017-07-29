@@ -98,6 +98,7 @@ class SpanDivEdit(Tool):
         criterias.append((None, 'normal', 'tr', None, 'delete', None, '', False))
         criterias.append((None, 'normal', 'tbody', None, 'delete', None, '', False))
         criterias.append(('.*', 'regex', 'td', 'class', 'delete', None, '', False))
+
         try:
             for cri in criterias:
                 self.process_files(cri)
@@ -107,7 +108,6 @@ class SpanDivEdit(Tool):
             if marge_done:
                 QMessageBox.information(self.gui, "Combine Same Tags",
                                         "Combination of 'b' and 'span' tags completed")
-
         except Exception:
             # Something bad happened report the error to the user
             import traceback
@@ -215,9 +215,11 @@ class SpanDivEdit(Tool):
 
             if children is not None:
                 count = len(children)
-                if count == 1:
-                    return self.combine_same_tags_crawler(children[0], tag)
-                elif count > 1:
+
+                if count > 0:  # Crow just for first child
+                    found |= self.combine_same_tags_crawler(children[0], tag)
+
+                if count > 1:  # CROW Pair Nodes
                     # 1 <-- last
                     for index in range(count - 1, 0, -1):
                         pre_node = children[index - 1]
