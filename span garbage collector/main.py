@@ -261,7 +261,10 @@ class SpanDivEdit(Tool):
             this_node_keys = [] if this_node.keys() is None else this_node.keys()
             # Check all keys of two nodes without duplicate key:
             for key in (pre_node_keys + list(set(this_node_keys) - set(pre_node_keys))):
-                if key.lower() == "dir" or key.lower() == "class" or key.lower() == "style":
+                if key.lower() == "dir":
+                    pre_node.attrib.pop(key, 0)  # remove 'dir' attribute
+                    this_node.attrib.pop(key, 0)  # remove 'dir' attribute
+                elif key.lower() == "class" or key.lower() == "style":
                     if not (key in this_node_keys and key in pre_node_keys and
                             set(pre_node.attrib[key].split()) == set(this_node.attrib[key].split())):
                         __isEqualNext = False
