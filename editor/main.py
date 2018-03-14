@@ -42,7 +42,7 @@ class ChangeSupEnglishNum(Tool):
         for name, media_type in container.mime_map.iteritems():
             if media_type in OEB_DOCS:
                 # The prefix // means search at any level of the document.
-                for item in XPath('//h:sup/h:sup/h:a | //h:sup/h:a/h:sup')(container.parsed(name)):
+                for item in XPath('//h:sup/h:sup/h:a | //h:sup/h:a/h:sup | //h:a/h:sup')(container.parsed(name)):
                     if item.text is not None:
                         item.text = re.sub(r"0", r"۰", item.text)
                         item.text = re.sub(r"1", r"۱", item.text)

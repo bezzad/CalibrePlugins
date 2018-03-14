@@ -9,7 +9,7 @@ __docformat__ = 'restructuredtext en'
 
 from calibre.customize import EditBookToolPlugin
 
-PLUGIN_NAME = "Remove garbage tags no ui"
+PLUGIN_NAME = "Span garbage collector"
 PLUGIN_SAFE_NAME = PLUGIN_NAME.strip().lower().replace(' ', '_')
 PLUGIN_DESCRIPTION = 'A tool for ebook editing.'
 PLUGIN_VERSION_TUPLE = (1, 1, 4)
