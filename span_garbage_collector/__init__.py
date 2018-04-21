@@ -12,9 +12,9 @@ from calibre.customize import EditBookToolPlugin
 PLUGIN_NAME = "Span garbage collector"
 PLUGIN_SAFE_NAME = PLUGIN_NAME.strip().lower().replace(' ', '_')
 PLUGIN_DESCRIPTION = 'A tool for ebook editing.'
-PLUGIN_VERSION_TUPLE = (1, 1, 4)
+PLUGIN_VERSION_TUPLE = (1, 1, 5)
 PLUGIN_VERSION = '.'.join([str(x) for x in PLUGIN_VERSION_TUPLE])
-PLUGIN_AUTHORS = 'Hasin.Taaghche'
+PLUGIN_AUTHORS = 'Behzad Khosravifar'
 
 class EditingToolbagPlugin(EditBookToolPlugin):
 
