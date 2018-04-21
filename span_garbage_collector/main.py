@@ -104,10 +104,10 @@ class SpanDivEdit(Tool):
                 self.process_files(cri)
 
             # Craw same tags to combining
-            marge_done = self.combine_same_tags("span") | self.combine_same_tags("b")
+            marge_done = self.combine_same_tags("span") | self.combine_same_tags("b") | self.remove_extra_tags("br")
             if marge_done:
                 QMessageBox.information(self.gui, "Combine Same Tags",
-                                        "Combination of 'b' and 'span' tags completed")
+                                        "Combination of 'b' and 'span' and 'br' tags completed")
         except Exception:
             # Something bad happened report the error to the user
             import traceback
@@ -261,7 +261,10 @@ class SpanDivEdit(Tool):
             this_node_keys = [] if this_node.keys() is None else this_node.keys()
             # Check all keys of two nodes without duplicate key:
             for key in (pre_node_keys + list(set(this_node_keys) - set(pre_node_keys))):
-                if key.lower() == "dir" or key.lower() == "class" or key.lower() == "style":
+                if key.lower() == "dir":
+                    pre_node.attrib.pop(key, 0)  # remove 'dir' attribute
+                    this_node.attrib.pop(key, 0)  # remove 'dir' attribute
+                elif key.lower() == "class" or key.lower() == "style":
                     if not (key in this_node_keys and key in pre_node_keys and
                             set(pre_node.attrib[key].split()) == set(this_node.attrib[key].split())):
                         __isEqualNext = False
@@ -300,6 +303,52 @@ class SpanDivEdit(Tool):
             return False
         else:
             return done
+
+    def remove_extra_tags(self, tag):
+        done = False
+        try:
+            # The book being edited as a container object
+            container = self.current_container
+
+            for name, media_type in container.mime_map.iteritems():
+                if media_type in OEB_DOCS:  # A HTML file. Parsed HTML files are lxml elements
+                    for body in XPath('//h:body')(container.parsed(name)):  # read xml nodes
+                        done |= self.remove_tag(body, tag)
+                        container.dirty(name)
+
+            # Tell the container that we have changed
+            if done:
+                self.cleanasawhistle = False
+        except Exception as e:
+            QMessageBox.information(self.gui, "Remove Extra Tags Err", "error({0}): {1}".format(type(e), e.args))
+            return False
+        else:
+            return done
+
+    def remove_tag(self, this_node, tag):
+        found = False
+
+        if this_node is None or tag is None:
+            return found
+
+        try:
+            if this_node.tag.lower().endswith(tag):
+                # remove this node
+                this_node.getparent().remove(this_node)
+                found = True
+            else:
+                children = this_node.getchildren()
+                if children is not None:
+                    count = len(children)
+                    if count > 0:  # Crow all child
+                        # 1 <-- last
+                        for index in range(count - 1, -1, -1):
+                            found |= self.remove_tag(children[index], tag)
+        except Exception as e:
+            QMessageBox.information(self.gui, "Remove Tag Err", "error({0}): {1}".format(type(e), e.args))
+            return False
+        else:
+            return found
 
     @staticmethod
     def get_members(class_name):
