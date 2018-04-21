@@ -23,6 +23,7 @@ from calibre_plugins.diaps_toolbag.resources.smartypants import smartyPants
 from calibre_plugins.diaps_toolbag.__init__ import PLUGIN_SAFE_NAME
 from lxml import etree
 
+
 class SpanDivEdit(Tool):
     name = 'SpanDivEdit'
 
@@ -104,7 +105,8 @@ class SpanDivEdit(Tool):
                 self.process_files(cri)
 
             # Craw same tags to combining
-            marge_done = self.combine_same_tags("span") | self.combine_same_tags("b") | self.remove_extra_tags("br")
+            marge_done = self.combine_same_tags("span") | self.combine_same_tags("b") | \
+                         self.remove_extra_tags("br") | self.remove_last_empty_paragraph()
             if marge_done:
                 QMessageBox.information(self.gui, "Combine Same Tags",
                                         "Combination of 'b' and 'span' and 'br' tags completed")
@@ -266,7 +268,7 @@ class SpanDivEdit(Tool):
                     this_node.attrib.pop(key, 0)  # remove 'dir' attribute
                 elif key.lower() == "class" or key.lower() == "style":
                     if not (key in this_node_keys and key in pre_node_keys and
-                            set(pre_node.attrib[key].split()) == set(this_node.attrib[key].split())):
+                                    set(pre_node.attrib[key].split()) == set(this_node.attrib[key].split())):
                         __isEqualNext = False
                         break
 
@@ -285,7 +287,7 @@ class SpanDivEdit(Tool):
                 if this_node.text is not None:
                     # add next node text and tail to end (tail) of this node children's
                     if pre_children is not None and len(pre_children) > 0:
-                        last_pre_node_child = pre_children[len(pre_children)-1]
+                        last_pre_node_child = pre_children[len(pre_children) - 1]
                         last_pre_node_child.tail = "" if last_pre_node_child.tail is None else last_pre_node_child.tail
                         last_pre_node_child.tail += this_node.text
                     else:
@@ -349,6 +351,37 @@ class SpanDivEdit(Tool):
             return False
         else:
             return found
+
+    def remove_last_empty_paragraph(self):
+        done = False
+        try:
+            # The book being edited as a container object
+            container = self.current_container
+
+            for name, media_type in container.mime_map.iteritems():
+                if media_type in OEB_DOCS:  # A HTML file. Parsed HTML files are lxml elements
+                    for body in XPath('//h:body')(container.parsed(name)):  # read xml nodes
+                        children = body.getchildren()
+                        if children is not None:
+                            count = len(children)
+                            if count > 0:  # Crow all child
+                                lastPara = children[count-1]
+                                # remove tag if it's empty or whitespace!
+                                if lastPara.tag.lower().endswith("p") and \
+                                        (lastPara.tail is None or lastPara.tail.decode('utf-8').isspace()):
+                                    done |= True
+                                    # remove this node
+                                    lastPara.getparent().remove(lastPara)
+                        container.dirty(name)
+
+            # Tell the container that we have changed
+            if done:
+                self.cleanasawhistle = False
+        except Exception as e:
+            QMessageBox.information(self.gui, "Remove Extra Tags Err", "error({0}): {1}".format(type(e), e.args))
+            return False
+        else:
+            return done
 
     @staticmethod
     def get_members(class_name):
