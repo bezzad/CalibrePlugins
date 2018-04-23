@@ -367,11 +367,13 @@ class SpanDivEdit(Tool):
                             if count > 0:  # Crow all child
                                 lastPara = children[count-1]
                                 # remove tag if it's empty or whitespace!
-                                if lastPara.tag.lower().endswith("p") and \
-                                        (lastPara.tail is None or lastPara.tail.decode('utf-8').isspace()):
-                                    done |= True
-                                    # remove this node
-                                    lastPara.getparent().remove(lastPara)
+                                if lastPara.tag.lower().endswith("p"):
+                                    lastP_children = lastPara.getchildren()
+                                    if (lastPara.text is None or lastPara.text.decode('utf-8').isspace()) and \
+                                            not(lastP_children is not None and len(lastP_children) > 0):
+                                        done |= True
+                                        # remove this node
+                                        lastPara.getparent().remove(lastPara)
                         container.dirty(name)
 
             # Tell the container that we have changed
