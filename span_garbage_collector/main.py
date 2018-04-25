@@ -105,11 +105,14 @@ class SpanDivEdit(Tool):
                 self.process_files(cri)
 
             # Craw same tags to combining
-            marge_done = self.combine_same_tags("span") | self.combine_same_tags("b") | \
-                         self.remove_extra_tags("br") | self.remove_last_empty_paragraph()
+            # !important: the below crowing is sorted by tag priorities
+            marge_done = self.remove_extra_tags("br") | \
+                         self.combine_same_tags("b") | \
+                         self.combine_same_tags("span") | \
+                         self.remove_last_empty_paragraph()
+
             if marge_done:
-                QMessageBox.information(self.gui, "Combine Same Tags",
-                                        "Combination of 'b' and 'span' and 'br' tags completed")
+                QMessageBox.information(self.gui, "Combine Same Tags", "Garbage extra tags collector is completed")
         except Exception:
             # Something bad happened report the error to the user
             import traceback
@@ -236,6 +239,13 @@ class SpanDivEdit(Tool):
                                 (pre_node.tail is None or pre_node.tail.decode('utf-8').isspace()):
                             found |= self.combine_same_tags_sibling(this_node, pre_node, tag)
 
+                # check again for empty tags after effect
+                children = node.getchildren()
+                if node.tag.lower().endswith(tag) and (children is None or len(children) == 0) and \
+                        (node.text is None or node.text == ""):
+                    found |= True
+                    # remove this node
+                    node.getparent().remove(node)
         except Exception as e:
             QMessageBox.information(self.gui, "Crawler Err", "error({0}): {1}".format(type(e), e.args))
             return False
@@ -268,7 +278,7 @@ class SpanDivEdit(Tool):
                     this_node.attrib.pop(key, 0)  # remove 'dir' attribute
                 elif key.lower() == "class" or key.lower() == "style":
                     if not (key in this_node_keys and key in pre_node_keys and
-                                    set(pre_node.attrib[key].split()) == set(this_node.attrib[key].split())):
+                            set(pre_node.attrib[key].split()) == set(this_node.attrib[key].split())):
                         __isEqualNext = False
                         break
 
@@ -370,7 +380,7 @@ class SpanDivEdit(Tool):
                                 if lastPara.tag.lower().endswith("p"):
                                     lastP_children = lastPara.getchildren()
                                     if (lastPara.text is None or lastPara.text.decode('utf-8').isspace()) and \
-                                            not(lastP_children is not None and len(lastP_children) > 0):
+                                            (lastP_children is None or len(lastP_children) == 0):
                                         done |= True
                                         # remove this node
                                         lastPara.getparent().remove(lastPara)
